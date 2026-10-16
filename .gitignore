@@ -1,0 +1,10 @@
+__pycache__/
+poses/
+backgrounds/
+overlays/
+previews/
+scene_sheet.png
+*.mp4
+*.wav
+*.mp3
+*.words.json
