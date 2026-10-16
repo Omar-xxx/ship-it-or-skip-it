@@ -28,7 +28,7 @@ specs/epXX.py ──► explainer.py ──► reel.mp4   (1080×1920, 30 fps)
 Needs Python 3.10+ and [FFmpeg](https://ffmpeg.org/) on your PATH.
 
 ```bash
-git clone https://github.com/<you>/ship-it-or-skip-it
+git clone https://github.com/Omar-xxx/ship-it-or-skip-it
 cd ship-it-or-skip-it
 pip install -r requirements.txt
 python make_kit.py        # renders the host's poses, backgrounds, stickers (once)
