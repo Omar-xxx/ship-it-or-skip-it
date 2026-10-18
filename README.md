@@ -67,6 +67,10 @@ POSE_CUES = [(0, "shocked"), (8.7, "point"), (40.3, "skip")]
 
 A card is any function returning a PIL RGBA image. `t` is the video time and `lt` is the time since the scene started, so cards can animate. The helpers `card()`, `pill()` and `text_c()` live in `explainer.py`.
 
+End card with a comment keyword: `card_cta("SAFE", "the setup checklist", lt)`. Pad the voice with ~2.5 s of silence (`ffmpeg -i v.wav -af apad=pad_dur=2.6 v_cta.wav`) so it can be read.
+
+`make_dm_cards.py` renders the checklist images you DM to people who comment the keyword.
+
 Poses: `idle` `explain` `point` `think` `ship` `skip` `shocked` `warn`.
 
 **4. Render.**

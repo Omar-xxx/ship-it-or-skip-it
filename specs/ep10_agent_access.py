@@ -1,7 +1,7 @@
 """Ep10 - Should you give an AI agent full access?  (mood: security / 'Me and the Devil')"""
 import math
 from PIL import Image, ImageDraw
-from explainer import card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, NAVY, prog, ease_out
+from explainer import card_cta, card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, NAVY, prog, ease_out
 
 GREY = (110, 110, 120)
 
@@ -108,7 +108,7 @@ SCENES = [
     (31.88, "Hidden Text", "Gives It Orders", lambda t, lt: c_hidden(t, lt)),
     (39.16, "Full Access", "for Your AI Agent?", None),
     (45.30, "Safer Setup", "Do This Instead", lambda t, lt: c_safe(t, lt)),
-    (50.96, "Ship It", "or Skip It?", lambda t, lt: c_follow()),
+    (50.96, "Want the", "Exact Steps?", lambda t, lt: card_cta("SAFE", "the setup checklist", lt)),
 ]
 STAMPS = [(16.84, 18.4, "OFFLINE"), (44.30, 45.30, "SKIP IT")]
 POSE_CUES = [(0, "shocked"), (6.26, "explain"), (9.22, "point"), (16.84, "warn"), (18.6, "point"), (25.2, "warn"),

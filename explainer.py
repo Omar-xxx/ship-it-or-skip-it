@@ -134,6 +134,23 @@ def card_follow():
     text_c(d, 460, 222, "Follow", inter(40, 800), (255, 255, 255))
     return im
 
+def card_cta(keyword, what, lt=1.0):
+    """End card: 'Comment KEYWORD and I'll DM you ...'. Keyword pill pulses."""
+    im, d = card(920, 430, border=BLUE)
+    text_c(d, 460, 40, "Comment", inter(64, 900))
+    f = inter(96, 900)
+    l, t, r, b = d.textbbox((0, 0), keyword, font=f)
+    pw, ph = r - l + 110, b - t + 56
+    sc = 1 + 0.04 * math.sin(lt * 6)
+    pw2, ph2 = int(pw * sc), int(ph * sc)
+    x0, y0 = 460 - pw2 // 2, 130 + (ph - ph2) // 2
+    d.rounded_rectangle((x0, y0, x0 + pw2, y0 + ph2), 34, fill=BLUE)
+    d.polygon([(x0 + 70, y0 + ph2 - 2), (x0 + 110, y0 + ph2 - 2), (x0 + 60, y0 + ph2 + 34)], fill=BLUE)
+    text_c(d, 460, y0 + (ph2 - (b - t)) / 2 - t + 2, keyword, f, (255, 255, 255))
+    text_c(d, 460, 300, "and I'll DM you", inter(38, 600), (90, 90, 100))
+    text_c(d, 460, 350, what, inter(42, 900))
+    return im
+
 def stamp(text, color=RED):
     f = inter(150, 900)
     tmp = ImageDraw.Draw(Image.new("RGBA", (1, 1)))

@@ -1,7 +1,7 @@
 """Ep04 - How I animate this character (mood: upbeat)"""
 import os, math
 from PIL import Image, ImageDraw
-from explainer import card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, ORANGE, NAVY, ease_out, HERE
+from explainer import card_cta, card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, ORANGE, NAVY, ease_out, HERE
 
 GREY = (110, 110, 120)
 _faces = {}
@@ -110,7 +110,7 @@ SCENES = [
     (32.84, "Step 4", "Cards by Code", lambda t, lt: c_code()),
     (37.36, "Is This Pipeline", "Worth It?", lambda t, lt: c_cost()),
     (41.10, "Render Time", "2 Minutes", lambda t, lt: c_render(lt)),
-    (44.76, "Want the", "Code?", lambda t, lt: c_github()),
+    (44.76, "Want the", "Code?", lambda t, lt: card_cta("CODE", "the GitHub link + setup", lt)),
 ]
 STAMPS = [(43.80, 44.76, "SHIP IT", GREEN)]
 POSE_CUES = [(0, "explain"), (5.22, "point"), (18.76, "point"), (30.52, "idle"), (32.84, "point"),
