@@ -115,3 +115,8 @@ SCENES = [
 STAMPS = [(43.80, 44.76, "SHIP IT", GREEN)]
 POSE_CUES = [(0, "explain"), (5.22, "point"), (18.76, "point"), (30.52, "idle"), (32.84, "point"),
              (37.36, "think"), (41.10, "explain"), (43.80, "ship"), (44.76, "explain")]
+
+# v4 chapter bar + counter
+CHAPTERS = ["the pipeline", "voice", "emotion tags", "lip-sync", "cards", "the cost", "render", "the code"]
+COUNTER = ("STEP", [(0, "0/4", BLUE), (5.22, "1/4", BLUE), (10.86, "2/4", BLUE), (18.76, "3/4", BLUE), (32.84, "4/4", BLUE),
+                    (37.36, "0 CREDITS", GREEN)])

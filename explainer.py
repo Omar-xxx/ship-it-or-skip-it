@@ -3,10 +3,10 @@ Ship It or Skip It - kinetic explainer renderer (light 'tech explainer' style).
 Headline + highlighted italic phrase, animated UI cards, word-by-word captions,
 lip-synced Patch in a rounded frame at the bottom.
 
-  python explainer.py VOICE.wav WORDS.json --spec specs/ep01_repo_trap.py --out reel.mp4
+  python explainer.py VOICE.wav WORDS.json --out reel.mp4
 
 WORDS.json = [[start, end, "word"], ...]   (faster-whisper word timestamps)
-Each video is a spec file in specs/ (SCENES, STAMPS, POSE_CUES).
+Edit SCENES / POSE_CUES below for each new video.
 """
 import json, math, subprocess, sys, os, argparse
 import numpy as np
@@ -185,16 +185,57 @@ def make_background():
     base += rng.normal(0, 7, (H, W, 1))
     return Image.fromarray(np.clip(base, 0, 255).astype(np.uint8)).convert("RGBA")
 
-def headline_img(l1, l2):
+def headline_img(l1, l2, style="v4"):
     im = Image.new("RGBA", (W, 330), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    text_c(d, W / 2, 20, l1, inter(96, 900))
-    f = SERIF(118)
-    l, t, r, b = d.textbbox((0, 0), l2, font=f)
-    bw = r - l + 70
-    x = (W - bw) / 2
-    d.rectangle((x, 150, x + bw, 150 + 150), fill=BLUE)
-    d.text((x + 35 - l, 150 + 14 - t + 8), l2, font=f, fill=(255, 255, 255))
+    if style == "classic":
+        text_c(d, W / 2, 20, l1, inter(96, 900))
+        f = SERIF(118)
+        l, t, r, b = d.textbbox((0, 0), l2, font=f)
+        bw = r - l + 70
+        x = (W - bw) / 2
+        d.rectangle((x, 150, x + bw, 150 + 150), fill=BLUE)
+        d.text((x + 35 - l, 150 + 14 - t + 8), l2, font=f, fill=(255, 255, 255))
+        return im
+    # v4: bold sans line + italic serif accent in colour, no box (shrinks to fit)
+    f1 = inter(92, 900)
+    while d.textlength(l1, font=f1) > W - 120: f1 = inter(f1.size - 4, 900)
+    text_c(d, W / 2, 24, l1, f1)
+    f2 = SERIF(140)
+    while d.textlength(l2, font=f2) > W - 100: f2 = SERIF(f2.size - 4)
+    text_c(d, W / 2, 128, l2, f2, BLUE)
     return im
+
+def stack_card(c):
+    """Put two offset 'paper' sheets behind a card so it reads as a pile of documents."""
+    pad = 46
+    out = Image.new("RGBA", (c.width + pad * 2, c.height + pad * 2), (0, 0, 0, 0))
+    for k, (dx, dy, ang) in enumerate([(-22, 34, 3.2), (26, 18, -2.0)]):
+        sh = Image.new("RGBA", c.size, (0, 0, 0, 0))
+        ImageDraw.Draw(sh).rounded_rectangle((2, 2, c.width - 3, c.height - 3), 34,
+                                             fill=(236, 234, 228) if k == 0 else (246, 245, 241), outline=(205, 203, 196), width=3)
+        sh = sh.rotate(ang, expand=True, resample=Image.BICUBIC)
+        out.alpha_composite(sh, (pad + dx - (sh.width - c.width) // 2, pad + dy - (sh.height - c.height) // 2))
+    out.alpha_composite(c, (pad, pad))
+    return out
+
+def topbar_img(chapter, idx, counter_label=None, counter_val=None, color=RED, pop=1.0):
+    im = Image.new("RGBA", (W, 120), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.text((60, 42), f"// {idx:02d} — {chapter}", font=MONO(32), fill=(95, 95, 108))
+    if counter_label:
+        fv = inter(int(46 * (1.25 - 0.25 * pop)), 900)
+        vw = d.textlength(counter_val, font=fv)
+        d.text((W - 60 - vw, 30 + (1 - pop) * -6), counter_val, font=fv, fill=color)
+        fl = MONO(26); lw = d.textlength(counter_label, font=fl)
+        d.text((W - 60 - vw - 22 - lw, 46), counter_label, font=fl, fill=(95, 95, 108))
+    return im
+
+def outlined_word(fr, cx, cy, wd, f, stroke=10):
+    d = ImageDraw.Draw(fr)
+    l, tt, r, b = d.textbbox((0, 0), wd, font=f)
+    x, y = cx - (r - l) / 2 - l, cy - (b - tt) / 2 - tt
+    d.text((x + 4, y + 7), wd, font=f, fill=(17, 17, 17), stroke_width=stroke, stroke_fill=(17, 17, 17))
+    d.text((x, y), wd, font=f, fill=INK, stroke_width=stroke, stroke_fill=(255, 255, 255))
+    d.text((x, y), wd, font=f, fill=INK)
 
 def patch_window():
     im = Image.new("RGBA", (W - 100, 900), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
@@ -205,13 +246,21 @@ def patch_window():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("audio"); ap.add_argument("words"); ap.add_argument("--out", default="explainer.mp4")
-    ap.add_argument("--spec", required=True, help="python file defining SCENES, STAMPS, POSE_CUES (see specs/)")
+    ap.add_argument("--spec", help="python file defining SCENES, STAMPS, POSE_CUES (optional: CHAPTERS, COUNTER)")
+    ap.add_argument("--style", default="v4", choices=["v4", "classic"],
+                    help="v4: unboxed host, chapter bar, stacked cards (default). classic: the original boxed layout")
+    ap.add_argument("--frames", help="debug: comma-separated seconds; save PNG stills instead of a video")
     a = ap.parse_args()
     global SCENES, STAMPS, POSE_CUES
-    if True:
+    chapters, counter = None, None
+    if a.spec:
         import importlib.util
         sp = importlib.util.spec_from_file_location("spec", a.spec); m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m)
         SCENES, STAMPS, POSE_CUES = m.SCENES, m.STAMPS, m.POSE_CUES
+        chapters = getattr(m, "CHAPTERS", None)
+        counter = getattr(m, "COUNTER", None)   # ("LABEL", [(start, "value", colour), ...])
+    v4 = a.style == "v4"
+    if chapters is None: chapters = [s[2].lower().rstrip(".?!") for s in SCENES]
 
     x, sr = load_audio(a.audio)
     mouths = mouth_track(x, sr); n = len(mouths); blinks = blink_track(n)
@@ -224,45 +273,62 @@ def main():
 
     bg = make_background()
     win = patch_window()
-    heads = {i: headline_img(s[1], s[2]) for i, s in enumerate(SCENES)}
+    heads = {i: headline_img(s[1], s[2], a.style) for i, s in enumerate(SCENES)}
     stamps = {i: shadowed(stamp(s[2], s[3] if len(s) > 3 else RED)) for i, s in enumerate(STAMPS)}
-    cap_font = inter(118, 900)
     pose_cache = {}
 
     def patch_img(pose, mouth, blink):
         k = (pose, mouth, blink)
         if k not in pose_cache:
             p = os.path.join(HERE, "poses", pose, f"{mouth}{'_blink' if blink else ''}.png")
-            pose_cache[k] = Image.open(p).convert("RGBA").resize((900, 900), Image.LANCZOS)
+            im = Image.open(p).convert("RGBA")
+            if v4: im = shadowed(im, radius=18, offset=6, alpha=40)
+            else: im = im.resize((900, 900), Image.LANCZOS)
+            pose_cache[k] = im
         return pose_cache[k]
 
-    ff = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
-                           "-r", str(FPS), "-i", "-", "-i", a.audio, "-map", "0:v", "-map", "1:a",
-                           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium",
-                           "-c:a", "aac", "-b:a", "192k", "-shortest", a.out], stdin=subprocess.PIPE)
-
-    for i in range(n):
+    def frame(i):
         t = i / FPS
         fr = bg.copy()
-        # scene
         si = max(k for k, s in enumerate(SCENES) if s[0] <= t)
         st = SCENES[si][0]; lt = t - st
-        # headline: slide up + fade
-        hp = ease_out(prog(lt, 0, 0.35)) if si > 0 or t > 0.05 else 1
+        top = 150 if v4 else 150
+        # chapter bar + counter (v4)
+        if v4:
+            cl = cv = None; cc = RED; pop = 1.0
+            if counter:
+                vals = [v for v in counter[1] if v[0] <= t]
+                if vals:
+                    v0 = vals[-1]; cl, cv = counter[0], v0[1]; cc = v0[2] if len(v0) > 2 else RED
+                    pop = ease_out_back(prog(t, v0[0], 0.3)) if t - v0[0] < 0.3 else 1.0
+            fr.alpha_composite(topbar_img(chapters[si], si + 1, cl, cv, cc, clamp(pop, 0, 1.2)), (0, 40))
+        # headline: slide up + fade (frame 0 shows everything = cover frame)
+        hp = ease_out(prog(lt, 0, 0.35)) if si > 0 else 1
         h = heads[si].copy()
         if hp < 1: h.putalpha(h.split()[3].point(lambda v, hp=hp: int(v * hp)))
-        fr.alpha_composite(h, (0, int(150 + 40 * (1 - hp))))
+        fr.alpha_composite(h, (0, int(top + 40 * (1 - hp))))
         # card
         fac = SCENES[si][3]
         if fac:
-            c = shadowed(fac(t, lt))
-            cp = ease_out_back(prog(lt, 0.08, 0.38)) if prog(lt, 0.08, 0.38) < 1 else 1
+            c = fac(t, lt)
+            c = shadowed(stack_card(c) if v4 else c)
+            raw = prog(lt, 0.08, 0.38) if si > 0 else 1
+            cp = ease_out_back(raw) if raw < 1 else 1
             sc = 0.86 + 0.14 * cp
             cw, ch = int(c.width * sc), int(c.height * sc)
             c = c.resize((cw, ch), Image.BILINEAR)
             if cp < 1: c.putalpha(c.split()[3].point(lambda v, cp=cp: int(v * clamp(cp))))
-            fr.alpha_composite(c, ((W - cw) // 2, 505 + (470 - ch) // 2 - 10))
-        # stamps
+            cy = 520 if v4 else 505
+            fr.alpha_composite(c, ((W - cw) // 2, cy + (470 - ch) // 2 - 10))
+        # patch
+        pose = [p for c0, p in POSE_CUES if c0 <= t][-1]
+        bob = int(6 * math.sin(t * 2.2))
+        if v4:
+            fr.alpha_composite(patch_img(pose, mouths[i], blinks[i]), (-200 - 36, 880 + bob - 36))
+        else:
+            fr.alpha_composite(win, (50 - 48, 1120 - 48))
+            fr.alpha_composite(patch_img(pose, mouths[i], blinks[i]), (90, 1100 + bob))
+        # stamps (on top of everything but captions)
         for k, (s0, s1, *_) in enumerate(STAMPS):
             if s0 <= t < s1:
                 p = prog(t, s0, 0.22)
@@ -270,11 +336,6 @@ def main():
                 s = stamps[k]; sw, sh = int(s.width * sc), int(s.height * sc)
                 s = s.resize((sw, sh), Image.BILINEAR)
                 fr.alpha_composite(s, ((W - sw) // 2, 620 + (300 - sh) // 2))
-        # patch window + patch
-        fr.alpha_composite(win, (50 - 48, 1120 - 48))
-        pose = [p for c0, p in POSE_CUES if c0 <= t][-1]
-        bob = int(6 * math.sin(t * 2.2))
-        fr.alpha_composite(patch_img(pose, mouths[i], blinks[i]), (90, 1100 + bob))
         # kinetic caption (current word)
         cur = [w for w in words if w[0] <= t < max(w[1], w[0] + 0.18)]
         if not cur:
@@ -284,14 +345,30 @@ def main():
             s0, _, wd = cur[-1]
             wd = wd.strip().strip(",.").lower() if not wd.endswith(("?", "!")) else wd.lower()
             p = prog(t, s0, 0.12); sc = 1.18 - 0.18 * ease_out(p)
-            f = inter(int(118 * sc), 900)
-            d = ImageDraw.Draw(fr)
-            l, tt, r, b = d.textbbox((0, 0), wd, font=f)
-            cx, cy = W / 2, 1035
-            d.text((cx - (r - l) / 2 - l + 5, cy - (b - tt) / 2 - tt + 6), wd, font=f, fill=(255, 255, 255))
-            d.text((cx - (r - l) / 2 - l, cy - (b - tt) / 2 - tt), wd, font=f, fill=INK)
-        ff.stdin.write(fr.convert("RGB").tobytes())
-        if i % 150 == 0: print(f"{t:5.1f}s", flush=True)
+            if v4:
+                outlined_word(fr, W / 2, 1075, wd, inter(int(108 * sc), 900))
+            else:
+                f = inter(int(118 * sc), 900)
+                d = ImageDraw.Draw(fr)
+                l, tt, r, b = d.textbbox((0, 0), wd, font=f)
+                cx, cy = W / 2, 1035
+                d.text((cx - (r - l) / 2 - l + 5, cy - (b - tt) / 2 - tt + 6), wd, font=f, fill=(255, 255, 255))
+                d.text((cx - (r - l) / 2 - l, cy - (b - tt) / 2 - tt), wd, font=f, fill=INK)
+        return fr
+
+    if a.frames:
+        base = os.path.splitext(a.out)[0]
+        for s in a.frames.split(","):
+            i = min(n - 1, int(float(s) * FPS)); frame(i).convert("RGB").save(f"{base}_{float(s):05.1f}.png")
+        print("stills saved"); return
+
+    ff = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
+                           "-r", str(FPS), "-i", "-", "-i", a.audio, "-map", "0:v", "-map", "1:a",
+                           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium",
+                           "-c:a", "aac", "-b:a", "192k", "-shortest", a.out], stdin=subprocess.PIPE)
+    for i in range(n):
+        ff.stdin.write(frame(i).convert("RGB").tobytes())
+        if i % 150 == 0: print(f"{i / FPS:5.1f}s", flush=True)
     ff.stdin.close(); ff.wait()
     print("done:", a.out)
 

@@ -91,3 +91,7 @@ SCENES = [
 STAMPS = [(30.20, 31.18, "SKIP IT")]
 POSE_CUES = [(0, "explain"), (3.58, "ship"), (8.56, "think"), (10.36, "point"), (14.40, "shocked"),
              (19.82, "warn"), (25.82, "think"), (30.20, "skip"), (31.18, "explain"), (35.70, "idle")]
+
+# v4 chapter bar + counter (120 free credits, 35 per clip)
+CHAPTERS = ["higgsfield", "the good", "the catch", "my test", "the terms", "the verdict", "who should pay", "follow"]
+COUNTER = ("CREDITS LEFT", [(0, "120", (25, 195, 125)), (15.4, "85", (255, 122, 26)), (16.4, "50", (255, 122, 26)), (17.4, "15", (235, 59, 59)), (18.2, "0", (235, 59, 59))])

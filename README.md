@@ -65,6 +65,13 @@ STAMPS    = [(40.30, 41.5, "SKIP IT")]          # start, end, text[, color]
 POSE_CUES = [(0, "shocked"), (8.7, "point"), (40.3, "skip")]
 ```
 
+Optional, for the top bar (chapter label on the left, a counter on the right):
+
+```python
+CHAPTERS = ["the repo", "last commit", "the verdict"]        # one per scene
+COUNTER  = ("RED FLAGS", [(0, "0"), (11.2, "1", (235, 59, 59))])  # label, [(start, value[, colour])]
+```
+
 A card is any function returning a PIL RGBA image. `t` is the video time and `lt` is the time since the scene started, so cards can animate. The helpers `card()`, `pill()` and `text_c()` live in `explainer.py`.
 
 End card with a comment keyword: `card_cta("SAFE", "the setup checklist", lt)`. Pad the voice with ~2.5 s of silence (`ffmpeg -i v.wav -af apad=pad_dur=2.6 v_cta.wav`) so it can be read.
@@ -80,6 +87,11 @@ python explainer.py ep05.wav ep05.words.json --spec specs/ep05.py --out ep05.mp4
 ```
 
 A one-minute reel takes about 2 minutes on a laptop CPU.
+
+| Flag | What it does |
+|---|---|
+| `--style classic` | The original layout: host inside a rounded box, highlighted phrase in a blue box. Default is `v4` (unboxed host, chapter bar, stacked cards) |
+| `--frames "0,12.5,30"` | Saves PNG stills at those seconds instead of rendering, for checking a layout fast |
 
 <p align="center"><img src="docs/poses.png" width="600" alt="The host's poses"></p>
 

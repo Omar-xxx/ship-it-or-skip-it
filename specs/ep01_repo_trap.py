@@ -16,3 +16,7 @@ STAMPS = [(23.82, 25.4, "NO."), (32.78, 35.2, "BOUGHT?"), (40.30, 41.5, "SKIP IT
 POSE_CUES = [(0, "shocked"), (4.9, "explain"), (8.7, "point"), (11.2, "warn"), (16.3, "point"), (19.9, "warn"),
              (23.8, "explain"), (25.6, "point"), (28.0, "warn"), (35.4, "think"), (40.3, "skip"), (41.6, "ship")]
 
+
+# v4 chapter bar + counter
+CHAPTERS = ["the repo", "3 checks", "last commit", "permissions", "star history", "the risk", "the verdict", "the checklist"]
+COUNTER = ("RED FLAGS", [(0, "0", (17, 17, 17)), (11.2, "1", (235, 59, 59)), (19.88, "2", (235, 59, 59)), (32.78, "3", (235, 59, 59))])

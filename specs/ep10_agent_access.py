@@ -113,3 +113,8 @@ SCENES = [
 STAMPS = [(16.84, 18.4, "OFFLINE"), (44.30, 45.30, "SKIP IT")]
 POSE_CUES = [(0, "shocked"), (6.26, "explain"), (9.22, "point"), (16.84, "warn"), (18.6, "point"), (25.2, "warn"),
              (28.18, "explain"), (31.88, "warn"), (39.16, "think"), (44.34, "skip"), (45.30, "explain"), (50.96, "idle")]
+
+# v4 chapter bar + "at stake" counter
+CHAPTERS = ["9 seconds", "not hacked", "the chain", "again", "your computer", "hidden orders", "the verdict", "safer setup", "the checklist"]
+COUNTER = ("AT STAKE", [(0, "PROD DB", RED), (16.84, "30 HRS", RED), (18.6, "LIVE DB", RED), (28.18, "YOUR PC", RED),
+                        (31.88, "YOUR EMAIL", RED), (45.30, "NOTHING", GREEN)])
