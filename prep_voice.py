@@ -1,8 +1,7 @@
 """
 One-shot voiceover prep: optional cuts -> tighten pauses -> loudness master -> word timings.
-  python prep_voice.py voice.mp3 OUTNAME [--cut "2.8-5.2,10.1-10.9"] [--keep "it might:0.5"] [--denoise]
---cut removes stutters/flubbed lines (seconds), --keep holds a dramatic pause before the given words.
-Produces OUTNAME.wav (mastered, -14 LUFS) and OUTNAME.words.json for explainer.py
+  python prep_voice.py voice.mp3 OUTNAME [--cut "2.8-5.2,10.1-10.9"] [--keep "it might:0.5"]
+Produces OUTNAME.wav (mastered, -16 LUFS, peaks limited) and OUTNAME.words.json for explainer.py
 """
 import argparse, json, os, subprocess, sys, tempfile, wave
 import numpy as np
@@ -12,7 +11,6 @@ ap = argparse.ArgumentParser()
 ap.add_argument("audio"); ap.add_argument("out")
 ap.add_argument("--cut", default=""); ap.add_argument("--keep", default="")
 ap.add_argument("--max", default="0.32")
-ap.add_argument("--denoise", action="store_true", help="for raw mic recordings: high-pass, 50/100 Hz hum notch, light denoise")
 a = ap.parse_args()
 
 src = tempfile.mktemp(suffix=".wav")
@@ -35,7 +33,13 @@ tight = tempfile.mktemp(suffix=".wav")
 cmd = [sys.executable, os.path.join(HERE, "tighten.py"), src, "--out", tight, "--max", a.max]
 if a.keep: cmd += ["--keep", a.keep]
 subprocess.run(cmd, check=True)
-subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tight, "-af", ("highpass=f=75,bandreject=f=50:width_type=q:w=8,bandreject=f=100:width_type=q:w=8,afftdn=nr=10:nf=-50," if a.denoise else "") + "loudnorm=I=-14:TP=-1.5:LRA=9", "-ar", "44100", a.out + ".wav"], check=True)
+# Gentle master: one constant gain to -16 LUFS, then a limiter that only touches peaks.
+# (One-pass loudnorm squashed the voice: crest factor 11 -> 5, which sounds loud, flat and cheap.)
+m = subprocess.run(["ffmpeg", "-i", tight, "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
+I = float([l for l in m.splitlines() if l.strip().startswith("I:")][-1].split()[1])
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tight, "-af",
+                f"highpass=f=70,volume={-16 - I:.2f}dB,alimiter=limit=0.84:attack=3:release=60:level=disabled",
+                "-ar", "44100", a.out + ".wav"], check=True)
 
 from faster_whisper import WhisperModel
 t16 = tempfile.mktemp(suffix=".wav")

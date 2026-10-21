@@ -324,7 +324,7 @@ def sfx(kind, rng=np.random.default_rng(7)):
         return 0.7 * y
     raise ValueError(kind)
 
-SFX_GAIN = {"whoosh": 0.22, "pop": 0.20, "tick": 0.18, "ding": 0.20, "thump": 0.35, "type": 0.16}
+SFX_GAIN = {"whoosh": 0.12, "pop": 0.11, "tick": 0.10, "ding": 0.11, "thump": 0.2, "type": 0.08}   # well under the voice
 
 def mix_sfx(voice_path, events, out_path):
     """Lay sound effects (list of (time, kind)) under the voice. Voice itself is untouched."""

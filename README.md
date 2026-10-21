@@ -10,7 +10,7 @@ This is the exact pipeline behind the **Ship It or Skip It** account, where Patc
 
 ```
 voice.mp3 ──► prep_voice.py ──► voice.wav + voice.words.json
-                 │  (cut flubs, tighten pauses, loudness -14 LUFS, word timings)
+                 │  (cut flubs, tighten pauses, gentle master to -16 LUFS, word timings)
                  ▼
 specs/epXX.py ──► explainer.py ──► reel.mp4   (1080×1920, 30 fps)
  (headlines, cards,     │
