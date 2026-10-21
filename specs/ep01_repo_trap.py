@@ -20,3 +20,8 @@ POSE_CUES = [(0, "shocked"), (4.9, "explain"), (8.7, "point"), (11.2, "warn"), (
 # v4 chapter bar + counter
 CHAPTERS = ["the repo", "3 checks", "last commit", "permissions", "star history", "the risk", "the verdict", "the checklist"]
 COUNTER = ("RED FLAGS", [(0, "0", (17, 17, 17)), (11.2, "1", (235, 59, 59)), (19.88, "2", (235, 59, 59)), (32.78, "3", (235, 59, 59))])
+
+# v5: orange key words, dark verdict scene, extra sounds
+HIGHLIGHT = ["trap", "commit", "months", "permissions", "everything", "stars", "overnight", "bought", "skip", "checklist"]
+DARK = [(35.42, 41.58)]
+SFX = [(41.58 + 0.5, "ding")]

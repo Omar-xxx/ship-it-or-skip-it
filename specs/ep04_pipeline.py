@@ -1,7 +1,7 @@
 """Ep04 - How I animate this character (mood: upbeat)"""
 import os, math
 from PIL import Image, ImageDraw
-from explainer import card_cta, card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, ORANGE, NAVY, ease_out, HERE
+from explainer import card_cta, card, pill, text_c, inter, MONO, INK, BLUE, RED, GREEN, ORANGE, NAVY, ease_out, HERE, countup, typewriter, shown, drop_in, connector
 
 GREY = (110, 110, 120)
 _faces = {}
@@ -36,11 +36,12 @@ def c_voice(t):
     d.text((50, 368), "Voice clone: Fish Audio (paid plan)", font=inter(26, 500), fill=GREY)
     return im
 
-def c_tags():
+def c_tags(lt=9.0):
     im, d = card(920, 400, fill=NAVY)
     d.text((50, 40), "Step 2 · Emotion tags", font=inter(32, 700), fill=(150, 165, 200))
     lines = [("[surprised]", " That repo?"), ("[thinking]", " Is it worth it?"), ("[confident]", " Skip it.")]
     for i, (tag, rest) in enumerate(lines):
+        if not shown(i, lt, 0.4, 0.9): break
         y = 120 + i * 85
         f = MONO(40)
         l, _, r, _ = d.textbbox((0, 0), tag, font=f)
@@ -64,21 +65,22 @@ def c_mouths(t, blink_badge=False):
     if blink_badge: pill(d, 420, 320, "+ blinks on its own", inter(34, 900), INK)
     return im
 
-def c_code():
+def c_code(lt=9.0):
     im, d = card(920, 400, fill=NAVY)
     d.text((50, 40), "Step 4 · Cards + captions", font=inter(32, 700), fill=(150, 165, 200))
     code = [("def", (255, 122, 26)), (" card_commit", (61, 255, 143)), ("(badge=True):", (230, 235, 245))]
     x = 50
     for s, c in code:
         d.text((x, 130), s, font=MONO(40), fill=c); l, _, r, _ = d.textbbox((0, 0), s, font=MONO(40)); x += r - l
-    d.text((50, 200), '  pill("14 months ago")', font=MONO(40), fill=(230, 235, 245))
-    d.text((50, 270), "  # every frame = Python", font=MONO(40), fill=(120, 140, 180))
+    d.text((50, 200), typewriter('  pill("14 months ago")', lt, 0.5, 26), font=MONO(40), fill=(230, 235, 245))
+    if lt > 1.5: d.text((50, 270), typewriter("  # every frame = Python", lt, 1.5, 26), font=MONO(40), fill=(120, 140, 180))
     return im
 
-def c_cost():
+def c_cost(lt=9.0):
     im, d = card(920, 330)
     rows = [("Animation code", "Free", GREEN), ("Voice clone", "Paid plan", INK)]
     for i, (a, b, c) in enumerate(rows):
+        if not shown(i, lt, 0.3, 0.8): break
         y = 70 + i * 110
         d.text((60, y), a, font=inter(46, 800), fill=INK)
         pill(d, 600, y - 4, b, inter(36, 900), c)
@@ -90,6 +92,7 @@ def c_render(lt):
     d.text((50, 50), "Rendering reel.mp4", font=inter(38, 800), fill=INK)
     d.rounded_rectangle((50, 130, 870, 180), 25, fill=(232, 232, 238))
     d.rounded_rectangle((50, 130, 50 + int(820 * p), 180), 25, fill=GREEN)
+    d.text((720, 50), f"{countup(0, 100, lt, 0, 2.2)}%", font=inter(38, 900), fill=GREEN)
     pill(d, 50, 230, "≈ 2 minutes", inter(34, 900), INK)
     pill(d, 370, 230, "0 credits", inter(34, 900), GREEN)
     return im
@@ -105,10 +108,10 @@ def c_github():
 SCENES = [
     (0.00,  "This Character Is", "Made by Code", lambda t, lt: c_overview(lt)),
     (5.22,  "Step 1", "The Voice", lambda t, lt: c_voice(t)),
-    (10.86, "Step 2", "Emotion Tags", lambda t, lt: c_tags()),
+    (10.86, "Step 2", "Emotion Tags", lambda t, lt: c_tags(lt)),
     (18.76, "Step 3", "Auto Lip-Sync", lambda t, lt: c_mouths(t, blink_badge=t > 30.52)),
-    (32.84, "Step 4", "Cards by Code", lambda t, lt: c_code()),
-    (37.36, "Is This Pipeline", "Worth It?", lambda t, lt: c_cost()),
+    (32.84, "Step 4", "Cards by Code", lambda t, lt: c_code(lt)),
+    (37.36, "Is This Pipeline", "Worth It?", lambda t, lt: c_cost(lt)),
     (41.10, "Render Time", "2 Minutes", lambda t, lt: c_render(lt)),
     (44.76, "Want the", "Code?", lambda t, lt: card_cta("CODE", "the GitHub link + setup", lt)),
 ]
@@ -120,3 +123,8 @@ POSE_CUES = [(0, "explain"), (5.22, "point"), (18.76, "point"), (30.52, "idle"),
 CHAPTERS = ["the pipeline", "voice", "emotion tags", "lip-sync", "cards", "the cost", "render", "the code"]
 COUNTER = ("STEP", [(0, "0/4", BLUE), (5.22, "1/4", BLUE), (10.86, "2/4", BLUE), (18.76, "3/4", BLUE), (32.84, "4/4", BLUE),
                     (37.36, "0 CREDITS", GREEN)])
+
+# v5: orange key words, dark "result" scene, extra sounds
+HIGHLIGHT = ["pipeline", "mine", "cloned", "emotion", "surprised", "mouth", "blinks", "code", "free", "zero", "credits", "ship", "github"]
+DARK = [(41.10, 44.76)]
+SFX = [(33.3, "type"), (34.4, "type"), (41.1 + 2.2, "ding"), (44.76 + 0.3, "pop")]

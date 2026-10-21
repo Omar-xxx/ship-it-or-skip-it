@@ -72,6 +72,16 @@ CHAPTERS = ["the repo", "last commit", "the verdict"]        # one per scene
 COUNTER  = ("RED FLAGS", [(0, "0"), (11.2, "1", (235, 59, 59))])  # label, [(start, value[, colour])]
 ```
 
+v5 extras, all optional:
+
+```python
+HIGHLIGHT = ["free", "github"]      # caption words shown in an orange pill (numbers are automatic)
+DARK      = [(41.1, 44.8)]           # scenes drawn on a dark background
+SFX       = [(33.3, "type")]         # extra sounds: whoosh, pop, tick, ding, thump, type
+```
+
+Card helpers: `countup()`, `typewriter()`, `shown()` / `drop_in()`, `connector()`, `chat_bubble()`.
+
 A card is any function returning a PIL RGBA image. `t` is the video time and `lt` is the time since the scene started, so cards can animate. The helpers `card()`, `pill()` and `text_c()` live in `explainer.py`.
 
 End card with a comment keyword: `card_cta("SAFE", "the setup checklist", lt)`. Pad the voice with ~2.5 s of silence (`ffmpeg -i v.wav -af apad=pad_dur=2.6 v_cta.wav`) so it can be read.
@@ -90,7 +100,8 @@ A one-minute reel takes about 2 minutes on a laptop CPU.
 
 | Flag | What it does |
 |---|---|
-| `--style classic` | The original layout: host inside a rounded box, highlighted phrase in a blue box. Default is `v4` (unboxed host, chapter bar, stacked cards) |
+| `--style v4` / `classic` | Older looks. Default `v5`: phrase captions with key-word pills, blur-in, sound effects, dark scenes |
+| `--no-sfx` | Skip the generated sound effects |
 | `--frames "0,12.5,30"` | Saves PNG stills at those seconds instead of rendering, for checking a layout fast |
 
 <p align="center"><img src="docs/poses.png" width="600" alt="The host's poses"></p>
