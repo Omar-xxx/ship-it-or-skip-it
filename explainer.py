@@ -378,6 +378,61 @@ def draw_phrase(fr, chunk, t, cy, highlight, dark=False):
                 d.text((x + 14, y + 10 + dy), tok, font=f, fill=ink, stroke_width=6, stroke_fill=stroke)
             x += wdt + sp
 
+
+# ------------------------------------------------------------------ v5 screenshot cards
+_shot_cache = {}
+def screenshot_card(path, crop, lt, highlights=(), blur=(), scale=1.0, width=900, max_h=560,
+                    zoom_to=None, zoom=0.10, zoom_start=0.5, zoom_dur=3.0):
+    """A real screenshot in a browser window. crop/highlights/blur boxes are (x0, y0, x1, y1) in
+    the coordinates you measured, multiplied by `scale` to reach the file's real pixels.
+    highlights: [(t_on, box)] -> orange box that draws itself around that area at t_on (scene time).
+    blur: boxes to blur out (names, emails, faces). zoom_to: box to slowly push in on."""
+    key = (path, crop, tuple(blur), scale, width, max_h)
+    if key not in _shot_cache:
+        src = Image.open(os.path.join(HERE, path)).convert("RGBA")
+        S = lambda b: tuple(int(v * scale) for v in b)
+        for b in blur:
+            bb = S(b); reg = src.crop(bb).filter(ImageFilter.GaussianBlur(28)); src.paste(reg, bb[:2])
+        im = src.crop(S(crop))
+        k = min((width - 24) / im.width, (max_h - 64) / im.height)
+        _shot_cache[key] = (im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS), k)
+    im, k = _shot_cache[key]
+    cx0, cy0 = crop[0], crop[1]
+    to_px = lambda b: tuple(((b[i] - (cx0 if i % 2 == 0 else cy0)) * scale) * k for i in range(4))
+    # slow push-in towards zoom_to
+    z = 1 + (zoom * ease_out(prog(lt, zoom_start, zoom_dur)) if zoom_to else 0)
+    view = im
+    if z > 1.001:
+        fx0, fy0, fx1, fy1 = to_px(zoom_to); fx, fy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+        vw, vh = im.width / z, im.height / z
+        ox = min(max(0, fx - vw / 2), im.width - vw); oy = min(max(0, fy - vh / 2), im.height - vh)
+        view = im.crop((int(ox), int(oy), int(ox + vw), int(oy + vh))).resize(im.size, Image.BICUBIC)
+        mapb = lambda b: ((b[0] - ox) * z, (b[1] - oy) * z, (b[2] - ox) * z, (b[3] - oy) * z)
+    else:
+        mapb = lambda b: b
+    view = view.copy(); ov = Image.new("RGBA", view.size, (0, 0, 0, 0)); d = ImageDraw.Draw(ov)
+    for t_on, box in highlights:
+        p = prog(lt, t_on, 0.35)
+        if p <= 0: continue
+        x0, y0, x1, y1 = mapb(to_px(box)); x0 -= 8; y0 -= 6; x1 += 8; y1 += 6
+        d.rounded_rectangle((x0, y0, x1, y1), 10, fill=ORANGE + (int(50 * p),))
+        per = 2 * ((x1 - x0) + (y1 - y0)); L = per * ease_out(p)
+        pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)]; acc = 0
+        for a, b in zip(pts, pts[1:]):
+            seg = abs(b[0] - a[0]) + abs(b[1] - a[1])
+            if acc >= L: break
+            f = min(1, (L - acc) / seg); d.line((a, (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)), fill=ORANGE + (255,), width=6)
+            acc += seg
+    view.alpha_composite(ov)
+    # browser window
+    W2, H2 = view.width + 24, view.height + 64
+    win = Image.new("RGBA", (W2, H2), (0, 0, 0, 0)); wd = ImageDraw.Draw(win)
+    wd.rounded_rectangle((0, 0, W2 - 1, H2 - 1), 26, fill=(28, 30, 38), outline=(60, 64, 78), width=2)
+    for j, c in enumerate([(255, 95, 87), (254, 188, 46), (40, 200, 64)]): wd.ellipse((22 + j * 26, 18, 38 + j * 26, 34), fill=c)
+    mask = Image.new("L", view.size, 0); ImageDraw.Draw(mask).rounded_rectangle((0, 0, view.width - 1, view.height - 1), 14, fill=255)
+    win.paste(view, (12, 52), mask)
+    return win
+
 def patch_window():
     im = Image.new("RGBA", (W - 100, 900), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
     d.rounded_rectangle((0, 0, im.width - 1, im.height + 80), 70, fill=(222, 231, 255))
